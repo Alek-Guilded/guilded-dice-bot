@@ -21,8 +21,7 @@ server.listen(port, hostname, () => {
 /**
  * Dice roll bot
  */
-const token = 'CYzCOYyfTvg74t9/cCXnx93xr5Axe8uuxZBk22SV8vbfvWBiiqTkPnJ8riy8S6NeY3WajhuJHFvMBnBG6CNtjw==';
-// const token = 'YOUR_BOT_ACCESS_TOKEN';
+const token = 'YOUR_BOT_ACCESS_TOKEN';
 const socket = new WebSocket('wss://api.guilded.gg/v1/websocket', {
   headers: {
     Authorization: `Bearer ${token}`
