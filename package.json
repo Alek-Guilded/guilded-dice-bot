@@ -1,0 +1,17 @@
+{
+  "name": "guilded-dice-roll-bot",
+  "description": "Dice roll bot",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ShannonKalei/guilded-bot-test.git"
+  },
+  "keywords": [],
+  "dependencies": {
+    "node-fetch": "^2.6.1",
+    "ws": "8.5.0"
+  },
+  "scripts": {
+    "start": "node index.js"
+  }
+}
