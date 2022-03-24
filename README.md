@@ -1,1 +1,1 @@
-# guilded-bot-test
+# guilded-dice-bot
