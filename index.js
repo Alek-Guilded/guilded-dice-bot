@@ -36,8 +36,8 @@ const INCLUDE_EMOJIS = false;
 const D_ZERO_MESSAGES = [
   `Rolling a d0... uhhh... wait how do I roll this thing? 🤔`,
   'You want me to roll a how many sided dice?  **Zero**?  Show me how to do this.',
-  'Signs point to **zero**',
-  'Anyone have a spare d0 I can borrow? ...asking for a friend 👀',
+  'Signs point to **zero**.',
+  'Anyone have a spare d0 I can borrow? ...asking for a friend. 👀',
   'Did you mean to roll a d10?',
   'Did you mean to roll a d20?'
 ]
