@@ -129,6 +129,10 @@ socket.on('message', function incoming(data) {
           // Default message styling
           let diceRollMessage = `Rolling 1 ${diceType}`;
           let resultMessage = ` You rolled a **${diceRoll}**!`;
+          if (diceMax == Math.PI.toFixed(diceMax.length - 1).toString().slice(0, -1)) {
+            diceRollMessage = `🥧 Rolling 1 ${diceType}`;
+            resultMessage = `You rolled a **${diceRoll}**! 🥧`;
+          }
 
           const messageArray = ['.', '.', '.', resultMessage];
 
@@ -136,18 +140,25 @@ socket.on('message', function incoming(data) {
           createDiceRollMessage(diceRollMessage, messageArray, channelId, replyMessageIds, token);
         }
       } else if (
-          (messageContent.indexOf('d') > 1 && messageContent.indexOf('d') < 5)
+          (messageContent.indexOf('d') > 1)
           && messageContent.length > 3
         ) {
-        let diceAmount = parseInt(messageContent.slice(1, messageContent.indexOf('d')));
+          const inputDiceAmount = messageContent.slice(1, messageContent.indexOf('d'))
+          let diceAmount = parseInt(inputDiceAmount);
 
         if (diceAmount && !isNaN(diceAmount)) {
           const diceType = input.slice(messageContent.indexOf('d'), input.length);
           const diceMax = messageContent.slice((messageContent.indexOf('d') + 1), messageContent.length);
           let diceRollMessage = `Rolling ${diceAmount} ${diceType}s`;
+
+          if (diceMax == Math.PI.toFixed(diceMax.length - 1).toString().slice(0, -1) || inputDiceAmount == Math.PI.toFixed(inputDiceAmount.length - 1).toString().slice(0, -1)) {
+            diceRollMessage = `🥧 Rolling ${inputDiceAmount} ${diceType}s`;
+          }
           if (diceAmount === 1) {
             diceRollMessage = diceRollMessage.slice(0, -1);
           }
+
+         
 
           // Only allow max of 10 dice and only positive numbers
           if (diceAmount > 10) {
@@ -169,6 +180,9 @@ socket.on('message', function incoming(data) {
               }
               if (i === (diceAmount - 1)) {
                 resultMessage.push(`${diceRoll}!`);
+                if (diceMax == Math.PI.toFixed(diceMax.length - 1).toString().slice(0, -1) || inputDiceAmount == Math.PI.toFixed(inputDiceAmount.length - 1).toString().slice(0, -1)) {
+                  resultMessage.push(` 🥧`);
+                }
               } else {
                 resultMessage.push(`${diceRoll} | `);
               }
