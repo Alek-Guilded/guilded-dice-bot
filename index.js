@@ -114,8 +114,13 @@ socket.on('message', function incoming(data) {
           }
         });
       } else if (messageContent.indexOf('d') === 1 && input.length > 2) {
-        const diceType = input.slice(1, input.length);
-        const diceMax = messageContent.slice(2, messageContent.length);
+        let diceType = input.slice(1, input.length);
+        let diceMax = messageContent.slice(2, messageContent.length);
+
+        if (diceMax.toLowerCase() == 'pi') {
+          diceMax = '3.14';
+          diceType = '3.14';
+        }
 
         let diceRoll;
         // Negative numbers we should round down, positive numbers round up
@@ -129,7 +134,7 @@ socket.on('message', function incoming(data) {
           // Default message styling
           let diceRollMessage = `Rolling 1 ${diceType}`;
           let resultMessage = ` You rolled a **${diceRoll}**!`;
-          if (diceMax == Math.PI.toFixed(diceMax.length - 1).toString().slice(0, -1)) {
+          if (diceMax.length > 3 && diceMax == Math.PI.toFixed(diceMax.length - 1).toString().slice(0, -1)) {
             diceRollMessage = `🥧 Rolling 1 ${diceType}`;
             resultMessage = `You rolled a **${diceRoll}**! 🥧`;
           }
@@ -143,15 +148,23 @@ socket.on('message', function incoming(data) {
           (messageContent.indexOf('d') > 1)
           && messageContent.length > 3
         ) {
-          const inputDiceAmount = messageContent.slice(1, messageContent.indexOf('d'))
+          let inputDiceAmount = messageContent.slice(1, messageContent.indexOf('d'));
+          if (inputDiceAmount.toLowerCase() == 'pi') {
+            inputDiceAmount = '3.14';
+          }
           let diceAmount = parseInt(inputDiceAmount);
 
         if (diceAmount && !isNaN(diceAmount)) {
-          const diceType = input.slice(messageContent.indexOf('d'), input.length);
-          const diceMax = messageContent.slice((messageContent.indexOf('d') + 1), messageContent.length);
+          let diceType = input.slice(messageContent.indexOf('d'), input.length);
+          let diceMax = messageContent.slice((messageContent.indexOf('d') + 1), messageContent.length);
+          if (diceMax.toLowerCase() == 'pi') {
+            diceMax = '3.14';
+            diceType = '3.14';
+          }
+
           let diceRollMessage = `Rolling ${diceAmount} ${diceType}s`;
 
-          if (diceMax == Math.PI.toFixed(diceMax.length - 1).toString().slice(0, -1) || inputDiceAmount == Math.PI.toFixed(inputDiceAmount.length - 1).toString().slice(0, -1)) {
+          if ((diceMax.length > 3 && diceMax == Math.PI.toFixed(diceMax.length - 1).toString().slice(0, -1)) || (inputDiceAmount.length > 3 && inputDiceAmount == Math.PI.toFixed(inputDiceAmount.length - 1).toString().slice(0, -1))) {
             diceRollMessage = `🥧 Rolling ${inputDiceAmount} ${diceType}s`;
           }
           if (diceAmount === 1) {
@@ -180,7 +193,7 @@ socket.on('message', function incoming(data) {
               }
               if (i === (diceAmount - 1)) {
                 resultMessage.push(`${diceRoll}!`);
-                if (diceMax == Math.PI.toFixed(diceMax.length - 1).toString().slice(0, -1) || inputDiceAmount == Math.PI.toFixed(inputDiceAmount.length - 1).toString().slice(0, -1)) {
+                if ((diceMax.length > 3 && diceMax == Math.PI.toFixed(diceMax.length - 1).toString().slice(0, -1)) || (inputDiceAmount.length > 3 && inputDiceAmount == Math.PI.toFixed(inputDiceAmount.length - 1).toString().slice(0, -1))) {
                   resultMessage.push(` 🥧`);
                 }
               } else {
