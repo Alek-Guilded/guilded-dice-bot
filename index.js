@@ -68,7 +68,11 @@ socket.on('message', function incoming(data) {
 
   if (eventType === 'ChatMessageCreated') {
     const {message: {id: messageId, content, channelId}} = eventData;
-    messageContent = content.toLowerCase();
+    let input = content;
+    let messageContent = input.toLowerCase();
+    const regex = /,/ig;
+    input = input.replace(regex, '');
+    messageContent = messageContent.replace(regex, '');
     const replyMessageIds = [messageId];
 
     // Check for ! command... should we add other commands aside from !d commands?
@@ -109,9 +113,9 @@ socket.on('message', function incoming(data) {
             'Content-Type': 'application/json'
           }
         });
-      } else if (messageContent.indexOf('d') === 1 && content.length > 2) {
-        const diceType = content.slice(1, content.length);
-        const diceMax = content.slice(2, content.length);
+      } else if (messageContent.indexOf('d') === 1 && input.length > 2) {
+        const diceType = input.slice(1, input.length);
+        const diceMax = messageContent.slice(2, messageContent.length);
 
         let diceRoll;
         // Negative numbers we should round down, positive numbers round up
@@ -133,13 +137,13 @@ socket.on('message', function incoming(data) {
         }
       } else if (
           (messageContent.indexOf('d') > 1 && messageContent.indexOf('d') < 5)
-          && content.length > 3
+          && messageContent.length > 3
         ) {
-        let diceAmount = parseInt(content.slice(1, messageContent.indexOf('d')));
+        let diceAmount = parseInt(messageContent.slice(1, messageContent.indexOf('d')));
 
         if (diceAmount && !isNaN(diceAmount)) {
-          const diceType = content.slice(messageContent.indexOf('d'), content.length);
-          const diceMax = content.slice((messageContent.indexOf('d') + 1), content.length);
+          const diceType = input.slice(messageContent.indexOf('d'), input.length);
+          const diceMax = messageContent.slice((messageContent.indexOf('d') + 1), messageContent.length);
           let diceRollMessage = `Rolling ${diceAmount} ${diceType}s`;
           if (diceAmount === 1) {
             diceRollMessage = diceRollMessage.slice(0, -1);
@@ -200,7 +204,7 @@ async function createDiceRollMessage(startMessage, messageArray, channelId, repl
     }
   })
     .then((response) => {
-      console.log('response: ', response);
+      // console.log('response: ', response);
       return response.json();
     })
       .then((json) => {
