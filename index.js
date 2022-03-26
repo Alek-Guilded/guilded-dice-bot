@@ -15,24 +15,44 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(port, hostname, () => {
-  console.log(`Server running at http://${hostname}:${port}/`);
+  console.log(`  Server running at http://${hostname}:${port}/`);
 });
 
 /**
  * Dice roll bot
  */
 const token = 'YOUR_BOT_ACCESS_TOKEN';
-const socket = new WebSocket('wss://api.guilded.gg/v1/websocket', {
+const WS_URL = 'wss://api.guilded.gg/v1/websocket';
+const GUILDED_BASE_URL = 'https://www.guilded.gg/api/v1';
+
+const socket = new WebSocket(WS_URL, {
   headers: {
     Authorization: `Bearer ${token}`
   },
 });
+
+console.log(`  Websocket connecting to ${WS_URL}...`);
+
 socket.on('open', function() {
-  console.log('Connected to Guilded!');
+  console.log('  Connected to Guilded!');
+  console.log(`  Using base URL: ${GUILDED_BASE_URL}`);
 });
 
 // Dice rolling options
-const INCLUDE_EMOJIS = false;
+const HELP_MESSAGES = [
+  'Hello there! I am a dice rolling bot. 🎲 \n' +  
+  'I can roll dice for you!  Just let me know which dice to roll by using **!d** followed by the number of sides the dice should have. \n',
+
+  'Dice bot here! 👋  Need some help?'
+];
+
+const COMMON_CMDS =
+  '\nHere are some common commands you can use: \n' +
+  '**!d6** - roll a 6 sided dice \n' +
+  '**!d20** - roll a 20 sided dice \n' +
+  '**!d100** - roll a 100 sided dice \n' +
+  '**!3d6** - roll three 6 sided dice (I can only roll up to 10 dice at a time)';
+
 const D_ZERO_MESSAGES = [
   `Rolling a d0... uhhh... wait how do I roll this thing? 🤔`,
   'You want me to roll a how many sided dice?  **Zero**?  Show me how to do this.',
@@ -40,7 +60,7 @@ const D_ZERO_MESSAGES = [
   'Anyone have a spare d0 I can borrow? ...asking for a friend. 👀',
   'Did you mean to roll a d10?',
   'Did you mean to roll a d20?'
-]
+];
 
 // Web socket that listens for new messages
 socket.on('message', function incoming(data) {
@@ -49,16 +69,40 @@ socket.on('message', function incoming(data) {
   if (eventType === 'ChatMessageCreated') {
     const {message: {id: messageId, content, channelId}} = eventData;
     messageContent = content.toLowerCase();
+    const replyMessageIds = [messageId];
 
     // Check for ! command... should we add other commands aside from !d commands?
     if (messageContent.indexOf('!') === 0) {
-      if (messageContent === '!d0') {
-        const index = Math.round(Math.random() * D_ZERO_MESSAGES.length)
+      if (messageContent === '!dhelp' || messageContent === '!d?') {
+        const index = Math.floor(Math.random() * HELP_MESSAGES.length);
+        const helpMessage = HELP_MESSAGES[index].concat(COMMON_CMDS);
 
         // Creates a new channel message
-        fetch(`https://www.guilded.gg/api/v1/channels/${channelId}/messages`, {
+        fetch(`${GUILDED_BASE_URL}/channels/${channelId}/messages`, {
           method: 'POST',
-          body: JSON.stringify({"content": `${D_ZERO_MESSAGES[index]}`}),
+          body: JSON.stringify({
+            "content": helpMessage,
+            "replyMessageIds" : replyMessageIds
+          }),
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        })
+          .then((response) => {
+            // console.log('response: ', response);
+          });
+      } if (messageContent === '!d0') {
+        const index = Math.floor(Math.random() * D_ZERO_MESSAGES.length);
+
+        // Creates a new channel message
+        fetch(`${GUILDED_BASE_URL}/channels/${channelId}/messages`, {
+          method: 'POST',
+          body: JSON.stringify({
+            "content": `${D_ZERO_MESSAGES[index]}`,
+            "replyMessageIds" : replyMessageIds
+          }),
           headers: {
             'Authorization': `Bearer ${token}`,
             'Accept': 'application/json',
@@ -68,49 +112,87 @@ socket.on('message', function incoming(data) {
       } else if (messageContent.indexOf('d') === 1 && content.length > 2) {
         const diceType = content.slice(1, content.length);
         const diceMax = content.slice(2, content.length);
-        const diceRoll = Math.ceil(Math.random() * diceMax);
 
+        let diceRoll;
+        // Negative numbers we should round down, positive numbers round up
+        if (messageContent.indexOf('d-') === 1) {
+          diceRoll = Math.floor(Math.random() * diceMax);
+        } else {
+          diceRoll = Math.ceil(Math.random() * diceMax);
+        }
 
         if (diceRoll && !isNaN(diceRoll)) {
           // Default message styling
           let diceRollMessage = `Rolling 1 ${diceType}`;
-          let resultMessage = ` You rolled a **${diceRoll}**!`
+          let resultMessage = ` You rolled a **${diceRoll}**!`;
 
-          // If INCLUDE_EMOJIS is set to true, the posted message will 
-          // include emojis to influence the tone of the resulting roll.
-          // These emojis assume the max is good and the min is bad.
-          if (INCLUDE_EMOJIS) {
-            if (diceRoll === diceMax) {
-              resultMessage = ` You rolled a **${diceRoll}**! 🤩`
-            }
-    
-            if (diceRoll > (diceMax / 2)) {
-              resultMessage = ` You rolled a **${diceRoll}**! 😄`
-            }
-    
-            if (diceRoll <= (diceMax / 2)) {
-              resultMessage = ` You rolled a **${diceRoll}**! 😕`
-            }
-    
-            if (diceRoll === 1) {
-              resultMessage = ` You rolled a **${diceRoll}**! 😦`
-            }
-          }
+          const messageArray = ['.', '.', '.', resultMessage];
 
           // Post new channel message
-          createDiceRollMessage(diceRollMessage, resultMessage, channelId, token);
+          createDiceRollMessage(diceRollMessage, messageArray, channelId, replyMessageIds, token);
+        }
+      } else if (
+          (messageContent.indexOf('d') > 1 && messageContent.indexOf('d') < 5)
+          && content.length > 3
+        ) {
+        let diceAmount = parseInt(content.slice(1, messageContent.indexOf('d')));
+
+        if (diceAmount && !isNaN(diceAmount)) {
+          const diceType = content.slice(messageContent.indexOf('d'), content.length);
+          const diceMax = content.slice((messageContent.indexOf('d') + 1), content.length);
+          let diceRollMessage = `Rolling ${diceAmount} ${diceType}s`;
+          if (diceAmount === 1) {
+            diceRollMessage = diceRollMessage.slice(0, -1);
+          }
+
+          // Only allow max of 10 dice and only positive numbers
+          if (diceAmount > 10) {
+            diceRollMessage = `Sorry, I only have 10 magic dice to roll at a time. \n Rolling ${10} ${diceType}s`
+          } else if (diceAmount < -10) {
+            diceRollMessage = `Sorry, I only have -10 magic *negative* dice to roll at a time. \n Rolling ${-10} ${diceType}s`
+          }
+          diceAmount = Math.min(Math.abs(diceAmount), 10);
+          
+          if (diceMax && !isNaN(diceMax)) {
+            let diceRoll;
+            let resultMessage = ['You rolled '];
+            for (let i = 0; i < diceAmount; i++) {
+              // Negative numbers we should round down, positive numbers round up
+              if (messageContent.indexOf('d-') != -1) {
+                diceRoll = Math.floor(Math.random() * diceMax);
+              } else {
+                diceRoll = Math.ceil(Math.random() * diceMax);
+              }
+              if (i === (diceAmount - 1)) {
+                resultMessage.push(`${diceRoll}!`);
+              } else {
+                resultMessage.push(`${diceRoll} | `);
+              }
+            }
+
+            let messageArray = ['.', '.', '.'];
+
+            for (let i = 0; i < resultMessage.length; i++) {
+              messageArray.push(resultMessage[i]);
+            }
+
+            // Post new channel message
+            createDiceRollMessage(diceRollMessage, messageArray, channelId, replyMessageIds, token);
+          }
         }
       }
     }
   }
 });
 
-async function createDiceRollMessage(startMessage, endMessage, channelId, token) {
-  let updateMessage = startMessage;
+async function createDiceRollMessage(startMessage, messageArray, channelId, replyMessageIds, token) {
   let messageId;
-  await fetch(`https://www.guilded.gg/api/v1/channels/${channelId}/messages`, {
+  await fetch(`${GUILDED_BASE_URL}/channels/${channelId}/messages`, {
     method: 'POST',
-    body: JSON.stringify({"content":`${startMessage}`}),
+    body: JSON.stringify({
+      "content":`${startMessage}`,
+      "replyMessageIds" : replyMessageIds
+    }),
     headers: {
       'Authorization': `Bearer ${token}`,
       'Accept': 'application/json',
@@ -118,32 +200,17 @@ async function createDiceRollMessage(startMessage, endMessage, channelId, token)
     }
   })
     .then((response) => {
+      console.log('response: ', response);
       return response.json();
     })
       .then((json) => {
         messageId = json.message.id;
-        updateMessage = updateMessage.concat('.');
-        updateChannelMessage(channelId, messageId, updateMessage, token)
-          .then(() => {
-            updateMessage = updateMessage.concat('.');
-            updateChannelMessage(channelId, messageId, updateMessage, token)
-              .then(() => {
-                updateMessage = updateMessage.concat('.');
-                updateChannelMessage(channelId. messageId, updateMessage, token)
-                  .then(() => {
-                    updateMessage = updateMessage.concat(endMessage);
-                    updateChannelMessage(channelId, messageId, updateMessage, token)
-                  })
-              })
-          })
-          .catch((error) => {
-            console.log('Error updating channel message: ', error);
-          });;
+        iterateUpdateMessages(messageArray, channelId, messageId, startMessage, token, 0);
       });
 }
 
 async function updateChannelMessage(channelId, messageId, newMessage, token) {
-  await fetch(`https://www.guilded.gg/api/v1/channels/${channelId}/messages/${messageId}`, {
+  await fetch(`${GUILDED_BASE_URL}/channels/${channelId}/messages/${messageId}`, {
     method: 'PUT',
     body: JSON.stringify({"content":`${newMessage}`}),
     headers: {
@@ -154,5 +221,18 @@ async function updateChannelMessage(channelId, messageId, newMessage, token) {
   })
     .then((response) => {
       return response.json();
+    })
+}
+
+async function iterateUpdateMessages(messageArray, channelId, messageId, startMessage, token, i) {
+  let newMessage = startMessage;
+  newMessage = newMessage.concat(messageArray[i]);
+
+  await updateChannelMessage(channelId, messageId, newMessage, token)
+    .then(() => {
+      const next = i + 1;
+      if (next < messageArray.length) {
+        iterateUpdateMessages(messageArray, channelId, messageId, newMessage, token, next);
+      }
     })
 }
