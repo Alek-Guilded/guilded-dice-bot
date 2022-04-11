@@ -21,7 +21,7 @@ server.listen(port, hostname, () => {
 /**
  * Dice roll bot
  */
-const token = 'YOUR_BOT_ACCESS_TOKEN';
+const token = 'QT4zH6wkJfzITgPofGoBSwN8TKGCjJVlO/AWAKAA8ImzN2AFvsYprvZlkO8c7uofWPPzcla8zzys1aPpJUs6kA==';
 const WS_URL = 'wss://api.guilded.gg/v1/websocket';
 const GUILDED_BASE_URL = 'https://www.guilded.gg/api/v1';
 
