@@ -38,6 +38,11 @@ socket.on('open', function() {
   console.log(`  Using base URL: ${GUILDED_BASE_URL}`);
 });
 
+// Keep server awake
+setInterval(() => {
+  http.get("https://guilded-dice-bot.herokuapp.com/");
+},600000);
+
 // Dice rolling options
 const HELP_MESSAGES = [
   'Hello there! I am a dice rolling bot. 🎲 \n' +  
