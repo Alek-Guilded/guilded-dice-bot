@@ -11,7 +11,7 @@ const port = process.env.PORT || 3000;
 const server = http.createServer((req, res) => {
   res.statusCode = 200;
   res.setHeader('Content-Type', 'text/plain');
-  res.end('Test Server');
+  res.end('Guilded Dice Bot');
 });
 
 server.listen(port, hostname, () => {
@@ -40,8 +40,9 @@ socket.on('open', function() {
 
 // Keep server awake
 setInterval(() => {
-  http.get("https://guilded-dice-bot.herokuapp.com/");
-},600000);
+  http.get("http://guilded-dice-bot.herokuapp.com/");
+  console.log("Ping!");
+},60000);
 
 // Dice rolling options
 const HELP_MESSAGES = [
