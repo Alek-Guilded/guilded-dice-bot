@@ -41,8 +41,7 @@ socket.on('open', function() {
 // Keep server awake
 setInterval(() => {
   http.get("http://guilded-dice-bot.herokuapp.com/");
-  console.log("Ping!");
-},60000);
+},600000);
 
 // Dice rolling options
 const HELP_MESSAGES = [
