@@ -83,7 +83,8 @@ function connect() {
         input = input.replace(regex, '');
         messageContent = messageContent.replace(regex, '');
         const replyMessageIds = [messageId];
-
+        
+        if (messageContent.length > 100) return;
         // Check for ! command... should we add other commands aside from !d commands?
         if (messageContent.indexOf('!') === 0) {
           if (messageContent === '!dhelp' || messageContent === '!d?') {
