@@ -24,6 +24,7 @@ server.listen(port, hostname, () => {
 const token = process.env.BOT_ACCESS_TOKEN;
 const WS_URL = 'wss://api.guilded.gg/v1/websocket';
 const GUILDED_BASE_URL = 'https://www.guilded.gg/api/v1';
+const BOT_ID = 'AQNxbjL4';
 
 let reconnectTimer = null;
 
@@ -37,7 +38,7 @@ function connect() {
     console.log(`  Websocket connecting to ${WS_URL}...`);
 
     socket.on('open', function() {
-        stopOtherReconnects();
+	  stopOtherReconnects();
       console.log('  Connected to Guilded!');
       console.log(`  Using base URL: ${GUILDED_BASE_URL}`);
     });
@@ -48,6 +49,14 @@ function connect() {
     },600000);
 
     // Dice rolling options
+    const WELCOME_MESSAGE = "Hello! 👋  Thanks for inviting **Dice Bot** (that's me!) 🎲 \n" +
+    	'Here are some common commands you can use: \n' +
+      '**!d6** - roll a 6 sided dice \n' +
+      '**!d20** - roll a 20 sided dice \n' +
+      '**!d100** - roll a 100 sided dice \n' +
+      '**!3d6** - roll three 6 sided dice (I can only roll up to 10 dice at a time) \n' +
+      '**!d?** / **!dhelp** - post this command list';
+
     const HELP_MESSAGES = [
       'Hello there! I am a dice rolling bot. 🎲 \n' +  
       'I can roll dice for you!  Just let me know which dice to roll by using **!d** followed by the number of sides the dice should have. \n',
@@ -73,7 +82,14 @@ function connect() {
 
     // Web socket that listens for new messages
     socket.on('message', function incoming(data) {
-      const {t: eventType, d: eventData} = JSON.parse(data);
+      const {t: eventType, d: eventData, op: opcode} = JSON.parse(data);
+
+			// Check for Welcome Event
+			if (eventType === 'TeamMemberJoined' && eventData.member.user.id === BOT_ID) {
+				const serverId = eventData.serverId;
+				if (!serverId) return;
+				sendWelcomeMessage(serverId, token, WELCOME_MESSAGE);
+			}
 
       if (eventType === 'ChatMessageCreated') {
         const {message: {id: messageId, content, channelId}} = eventData;
@@ -83,7 +99,7 @@ function connect() {
         input = input.replace(regex, '');
         messageContent = messageContent.replace(regex, '');
         const replyMessageIds = [messageId];
-        
+
         if (messageContent.length > 100) return;
         // Check for ! command... should we add other commands aside from !d commands?
         if (messageContent.indexOf('!') === 0) {
@@ -181,8 +197,6 @@ function connect() {
                 diceRollMessage = diceRollMessage.slice(0, -1);
               }
 
-             
-
               // Only allow max of 10 dice and only positive numbers
               if (diceAmount > 10) {
                 diceRollMessage = `Sorry, I only have 10 magic dice to roll at a time. \n Rolling ${10} ${diceType}s`
@@ -258,6 +272,34 @@ reconnect();
 /*
  *  Async channel message requests
  */
+async function sendWelcomeMessage(serverId, token, welcomeMessage) {
+  await fetch(`${GUILDED_BASE_URL}/servers/${serverId}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    }
+  }).then((response) => {
+    return response.json();
+  }).then((json) => {
+  	try {
+  		fetch(`${GUILDED_BASE_URL}/channels/${json.server.defaultChannelId}/messages`, {
+		    method: 'POST',
+		    body: JSON.stringify({
+		      "content":`${welcomeMessage}`
+		    }),
+		    headers: {
+		      'Authorization': `Bearer ${token}`,
+		      'Accept': 'application/json',
+		      'Content-Type': 'application/json'
+		    }
+		  })
+  	} catch(e) {
+  		console.log('Unable to send welcome message: ', e);
+  	}	
+  })
+}
 
 async function createDiceRollMessage(startMessage, messageArray, channelId, replyMessageIds, token) {
   let messageId;
@@ -274,7 +316,6 @@ async function createDiceRollMessage(startMessage, messageArray, channelId, repl
     }
   })
     .then((response) => {
-      // console.log('response: ', response);
       return response.json();
     })
       .then((json) => {
