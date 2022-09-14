@@ -6,7 +6,7 @@ const fetch = require('node-fetch');
  * Server
  */
 const hostname = '0.0.0.0';
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8080;
 
 const server = http.createServer((req, res) => {
   res.statusCode = 200;
@@ -22,7 +22,7 @@ server.listen(port, hostname, () => {
  * Dice roll bot
  */
 const token = process.env.BOT_ACCESS_TOKEN;
-const WS_URL = 'wss://api.guilded.gg/v1/websocket';
+const WS_URL = 'wss://www.guilded.gg/websocket/v1';
 const GUILDED_BASE_URL = 'https://www.guilded.gg/api/v1';
 const BOT_ID = 'AQNxbjL4';
 
@@ -44,9 +44,9 @@ function connect() {
     });
 
     // Keep server awake
-    setInterval(() => {
-      http.get("http://guilded-dice-bot.herokuapp.com/");
-    },600000);
+    //setInterval(() => {
+    //  http.get("http://guilded-dice-bot.herokuapp.com/");
+    //},600000);
 
     // Dice rolling options
     const WELCOME_MESSAGE = "Hello! 👋  Thanks for inviting **Dice Bot** (that's me!) 🎲 \n" +
