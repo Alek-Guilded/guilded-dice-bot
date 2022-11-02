@@ -24,7 +24,6 @@ server.listen(port, hostname, () => {
 const token = process.env.BOT_ACCESS_TOKEN;
 const WS_URL = 'wss://www.guilded.gg/websocket/v1';
 const GUILDED_BASE_URL = 'https://www.guilded.gg/api/v1';
-const BOT_ID = 'AQNxbjL4';
 
 let reconnectTimer = null;
 
@@ -42,11 +41,6 @@ function connect() {
       console.log('  Connected to Guilded!');
       console.log(`  Using base URL: ${GUILDED_BASE_URL}`);
     });
-
-    // Keep server awake
-    //setInterval(() => {
-    //  http.get("http://guilded-dice-bot.herokuapp.com/");
-    //},600000);
 
     // Dice rolling options
     const WELCOME_MESSAGE = "Hello! 👋  Thanks for inviting **Dice Bot** (that's me!) 🎲 \n" +
@@ -82,13 +76,13 @@ function connect() {
 
     // Web socket that listens for new messages
     socket.on('message', function incoming(data) {
-      const {t: eventType, d: eventData, op: opcode} = JSON.parse(data);
+      const {t: eventType, d: eventData} = JSON.parse(data);
 
 			// Check for Welcome Event
-			if (eventType === 'TeamMemberJoined' && eventData.member.user.id === BOT_ID) {
-				const serverId = eventData.serverId;
-				if (!serverId) return;
-				sendWelcomeMessage(serverId, token, WELCOME_MESSAGE);
+			if (eventType === 'BotTeamMembershipCreated') {
+				const defaultChannelId = eventData.server.defaultChannelId;
+				if (!defaultChannelId) return;
+				sendWelcomeMessage(defaultChannelId, token, WELCOME_MESSAGE);
 			}
 
       if (eventType === 'ChatMessageCreated') {
@@ -272,32 +266,17 @@ reconnect();
 /*
  *  Async channel message requests
  */
-async function sendWelcomeMessage(serverId, token, welcomeMessage) {
-  await fetch(`${GUILDED_BASE_URL}/servers/${serverId}`, {
-    method: 'GET',
+async function sendWelcomeMessage(defaultChannelId, token, welcomeMessage) {
+  fetch(`${GUILDED_BASE_URL}/channels/${defaultChannelId}/messages`, {
+    method: 'POST',
+    body: JSON.stringify({
+      "content":`${welcomeMessage}`
+    }),
     headers: {
       'Authorization': `Bearer ${token}`,
       'Accept': 'application/json',
       'Content-Type': 'application/json'
     }
-  }).then((response) => {
-    return response.json();
-  }).then((json) => {
-  	try {
-  		fetch(`${GUILDED_BASE_URL}/channels/${json.server.defaultChannelId}/messages`, {
-		    method: 'POST',
-		    body: JSON.stringify({
-		      "content":`${welcomeMessage}`
-		    }),
-		    headers: {
-		      'Authorization': `Bearer ${token}`,
-		      'Accept': 'application/json',
-		      'Content-Type': 'application/json'
-		    }
-		  })
-  	} catch(e) {
-  		console.log('Unable to send welcome message: ', e);
-  	}	
   })
 }
 
