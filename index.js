@@ -79,7 +79,7 @@ function connect() {
       const {t: eventType, d: eventData} = JSON.parse(data);
 
 			// Check for Welcome Event
-			if (eventType === 'BotTeamMembershipCreated') {
+			if (eventType === 'BotServerMembershipCreated') {
 				const defaultChannelId = eventData.server.defaultChannelId;
 				if (!defaultChannelId) return;
 				sendWelcomeMessage(defaultChannelId, token, WELCOME_MESSAGE);
