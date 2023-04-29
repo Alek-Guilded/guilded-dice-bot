@@ -240,6 +240,13 @@ function connect() {
     stopOtherReconnects();
     reconnectTimer = setTimeout(reconnect, 5000);
   });
+	
+  socket.on('error', function clear() {
+    socket.terminate();
+    console.log("Socket on error: connection closed.");
+    stopOtherReconnects();
+    reconnectTimer = setTimeout(reconnect, 5000);
+  });
 
   return socket;
 }
